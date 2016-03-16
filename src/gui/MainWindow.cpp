@@ -602,6 +602,16 @@ void MainWindow::toggleWindow()
     }
 }
 
+void MainWindow::showMinimized()
+{
+    if (isTrayIconEnabled() && config()->get("GUI/MinimizeToTray").toBool()) {
+        hide();
+    }
+    else {
+        QWidget::showMinimized();
+    }
+}
+
 void MainWindow::lockDatabasesAfterInactivity()
 {
     // ignore event if a modal dialog is open (such as a message box or file dialog)
