@@ -175,7 +175,7 @@ MainWindow::MainWindow()
             SLOT(exportToCsv()));
     connect(m_ui->actionLockDatabases, SIGNAL(triggered()), m_ui->tabWidget,
             SLOT(lockDatabases()));
-    connect(m_ui->actionQuit, SIGNAL(triggered()), SLOT(close()));
+    connect(m_ui->actionQuit, SIGNAL(triggered()), SLOT(quit()));
 
     m_actionMultiplexer.connect(m_ui->actionEntryNew, SIGNAL(triggered()),
             SLOT(createEntry()));
@@ -441,16 +441,22 @@ void MainWindow::databaseTabChanged(int tabIndex)
 
 void MainWindow::closeEvent(QCloseEvent* event)
 {
-    bool accept = saveLastDatabases();
-
-    if (accept) {
-        saveWindowInformation();
-
-        event->accept();
-        QApplication::quit();
+    if (config()->get("GUI/MinimizeOnClose").toBool()) {
+        showMinimized();
+        event->ignore();
     }
     else {
-        event->ignore();
+        bool accept = saveLastDatabases();
+
+        if (accept) {
+            saveWindowInformation();
+
+            event->accept();
+            QApplication::quit();
+        }
+        else {
+            event->ignore();
+        }
     }
 }
 
@@ -599,6 +605,16 @@ void MainWindow::toggleWindow()
     }
 }
 
+void MainWindow::showMinimized()
+{
+    if (isTrayIconEnabled() && config()->get("GUI/MinimizeToTray").toBool()) {
+        hide();
+    }
+    else {
+        QWidget::showMinimized();
+    }
+}
+
 void MainWindow::lockDatabasesAfterInactivity()
 {
     // ignore event if a modal dialog is open (such as a message box or file dialog)
@@ -648,4 +664,12 @@ bool MainWindow::isTrayIconEnabled() const
     return config()->get("GUI/ShowTrayIcon").toBool()
             && QSystemTrayIcon::isSystemTrayAvailable();
 #endif
+}
+
+void MainWindow::quit()
+{
+    bool minOnClose = config()->get("GUI/MinimizeOnClose").toBool();
+    config()->set("GUI/MinimizeOnClose", false);
+    close();
+    config()->set("GUI/MinimizeOnClose", minOnClose);
 }
